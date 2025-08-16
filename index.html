@@ -1,700 +1,171 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aplikasi Cuti Pegawai RRI Sibolga</title>
-  <!-- Load Tailwind CSS from CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Load React and ReactDOM from CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
-  <!-- Load Firebase libraries from CDN -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, collection, query, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Use provided global variables for config and authentication
-    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-    // Admin password. In a production setting, use more secure authentication.
-    const ADMIN_PASSWORD = 'rriadmin2025';
-
-    // Initial leave data to populate Firestore if empty
-    const INITIAL_LEAVE_TYPES = {
-      'Cuti Tahunan': 12,
-      'Cuti Besar': 90, // 3 months = 90 days
-      'Cuti Sakit': 14,
-      'Cuti Melahirkan': 90, // 3 months = 90 days
-      'Cuti Karena Alasan Penting': 30, // 1 month = 30 days
-      'Cuti di Luar Tanggungan Negara': 1095, // 3 years = 1095 days
-      'Cuti Bersama': 7,
-    };
-
-    // Provided initial employee data
-    const initialEmployees = [
-      'Yanni Peter Latuheru, S.Sos', 'Ichwansyah Pohan, S.E', 'Rosmawan Hutabarat, S.E', 'Viktor Hamonangan Hutabarat',
-      'Khairil', 'Vivi Tri Doharny Daulay', 'Diskatarisa Hutabarat', 'Novita Sari Putri, S.E',
-      'Silverius Hamonangan P. Purba, S.Sos', 'Frans Martuani Sinaga, S.M', 'Ade Wulan Septyaningsih, S.IP',
-      'Nurhamni Ichwarti, S.Sos', 'Citra Priadi Pasaribu, S.IP', 'Azis Fahri Tanjung, S.Kom',
-      'Annisa Lestari Nasution, A.Md.Ak', 'Putri Andriani, A.Md.Ak', 'Mahani Aprilia, A.Md.Ak',
-      'Idola Pratiwi Sinaga, A.Md.Pjk', 'Ray Wiranta, A.Md.A.B', 'Indah Farima Putri, A.Md',
-      'Hans Pierre Sitohang, A.Md', 'Sopiah Hasibuan, A.Md', 'Aziziah Khurfatul Janah, A.Md.Ds',
-      'Astrid Khairani Sinaga, A.Md', 'Intan Friskila Hondro, A.Md', 'Anna Theresia Simatupang, S.Sos',
-      'Desi Suriani Pasaribu, S.E', 'Rindu Fatmawaty, S.H', 'Gerhanawati, S.E', 'Ismail Marzuki, S.Sos',
-      'Ronny Ferdian, S.E', 'Safran Nuh Nasution, S.T', 'M. Khalis Pasaribu, S.Ikom',
-      'Eko Putra Hutabarat, A.Md', 'Ahmad Ridho Siregar, A.Md.T', 'Ahlis Jami\'ah Damanik, A.Md.Kom',
-      'Deliana Nasution', 'Widya Sartika Nasution', 'Paulus Hadi', 'Ahmad Ferdian', 'Anhar Rianto Pasaribu',
-      'Deny Siahaan', 'Abdul Jalil', 'Dedi Hariadi', 'Edi Suheri', 'Muafdan Jega Joyful Rom Sihotang',
-      'James Fransiskus Jonni Sihombing', 'Martha Monica Putri Siahaan, S.T', 'Erni Sasmita, S.E',
-      'Wilson Pangihutan Siregar', 'Welly Boy Simatupang, S.E', 'Eva Meylina Siahaan',
-      'Flora Susanti Lumbantobing', 'Ester Tampubolon', 'Bernard Adi Saputra Saragih',
-      'Felix Simatupang', 'Mukhtadinul Ikhsan', 'Halasson Siahaan', 'Mahar Yusuf Sinaga',
-      'Irfan Sihotang', 'Rizky Ramadhan Piliang', 'Andrian Mendrofa'
-    ];
-
-    const { useState, useEffect, createContext, useContext } = React;
-    const AppContext = createContext(null);
-
-    const AppProvider = ({ children }) => {
-      const [user, setUser] = useState(null);
-      const [isAuthReady, setIsAuthReady] = useState(false);
-      const [db, setDb] = useState(null);
-      const [auth, setAuth] = useState(null);
-      const [userId, setUserId] = useState(null);
-      const [loading, setLoading] = useState(true);
-      const [leaveTypes, setLeaveTypes] = useState(INITIAL_LEAVE_TYPES);
-
-      useEffect(() => {
-        try {
-          if (Object.keys(firebaseConfig).length > 0) {
-            const app = initializeApp(firebaseConfig);
-            const authInstance = getAuth(app);
-            const dbInstance = getFirestore(app);
-            setAuth(authInstance);
-            setDb(dbInstance);
-
-            onAuthStateChanged(authInstance, async (currentUser) => {
-              if (currentUser) {
-                setUser(currentUser);
-                setUserId(currentUser.uid);
-              } else {
-                setUser(null);
-                setUserId(crypto.randomUUID());
-              }
-              setIsAuthReady(true);
-              setLoading(false);
-            });
-
-            if (initialAuthToken) {
-              signInWithCustomToken(authInstance, initialAuthToken)
-                .catch((error) => console.error("Error signing in with custom token:", error));
-            } else {
-              signInAnonymously(authInstance)
-                .catch((error) => console.error("Error signing in anonymously:", error));
-            }
-          } else {
-            console.error("Firebase config is not available.");
-            setLoading(false);
-          }
-        } catch (error) {
-          console.error("Failed to initialize Firebase:", error);
-          setLoading(false);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Catatan Firestore</title>
+    <!-- Tailwind CSS untuk styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #374151;
         }
-      }, []);
-
-      useEffect(() => {
-        if (!db || !isAuthReady || !user) return;
-
-        setupInitialData(db);
-
-        const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'appSettings');
-        const unsubscribe = onSnapshot(settingsDocRef, (docSnap) => {
-          if (docSnap.exists() && docSnap.data().leaveTypes) {
-            setLeaveTypes(docSnap.data().leaveTypes);
-          }
-        }, (error) => {
-          console.error("Error fetching leave types from Firestore:", error);
-        });
-
-        return () => unsubscribe();
-      }, [db, isAuthReady, user]);
-
-      const setupInitialData = async (db) => {
-        try {
-          if (!db) return;
-          const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'appSettings');
-          const settingsDocSnap = await getDoc(settingsDocRef);
-          if (!settingsDocSnap.exists()) {
-            await setDoc(settingsDocRef, { leaveTypes: INITIAL_LEAVE_TYPES });
-            console.log("Initial leave types data set up in Firestore.");
-          }
-
-          const employeeCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'employees');
-          const employeeDocs = await getDocs(employeeCollectionRef);
-          if (employeeDocs.empty) {
-            console.log("Employees collection is empty. Adding initial data...");
-            for (const name of initialEmployees) {
-              const id = name.split(',')[0].trim().toLowerCase().replace(/\s/g, '-');
-              await setDoc(doc(employeeCollectionRef, id), {
-                name,
-                leaveQuota: INITIAL_LEAVE_TYPES,
-                leaveUsed: Object.fromEntries(Object.keys(INITIAL_LEAVE_TYPES).map(key => [key, 0])),
-                leaveNotes: Object.fromEntries(Object.keys(INITIAL_LEAVE_TYPES).map(key => [key, ""])),
-                createdAt: new Date()
-              });
-            }
-            console.log("Initial employee data loaded to Firestore.");
-          } else {
-            console.log("Employees collection already exists. Skipping initial data setup.");
-          }
-        } catch (error) {
-          console.error("Error setting up initial data:", error);
-        }
-      };
-
-      const value = { user, isAuthReady, db, auth, userId, leaveTypes };
-      
-      // FIX: Correctly render the context provider with children inside.
-      return (
-        React.createElement(AppContext.Provider, { value: value },
-          loading ? (
-            React.createElement('div', { className: "flex items-center justify-center min-h-screen bg-gray-100" },
-              React.createElement('div', { className: "text-xl text-gray-700" }, "Memuat...")
-            )
-          ) : children
-        )
-      );
-    };
-
-    const useAppContext = () => useContext(AppContext);
-
-    const App = () => {
-      const { user, isAuthReady, auth } = useAppContext();
-      const [showLoginModal, setShowLoginModal] = useState(false);
-      const [showInfoModal, setShowInfoModal] = useState(false);
-      const [infoMessage, setInfoMessage] = useState('');
-      const [isAdmin, setIsAdmin] = useState(false);
-
-      const showMessage = (message) => {
-        setInfoMessage(message);
-        setShowInfoModal(true);
-      };
-
-      const handleLogout = async () => {
-        try {
-          if (auth && auth.currentUser) {
-            await signOut(auth);
-          }
-          setIsAdmin(false);
-          showMessage('Anda telah keluar.');
-        } catch (error) {
-          showMessage('Gagal keluar: ' + error.message);
-        }
-      };
-
-      const handleShowLogin = () => {
-        setShowLoginModal(true);
-      };
-
-      const handleAdminLogin = () => {
-        setIsAdmin(true);
-        setShowLoginModal(false);
-        showMessage('Login berhasil! Selamat datang, Admin.');
-      };
-
-      if (!isAuthReady) {
-        return null;
-      }
-
-      return (
-        React.createElement('div', { className: "min-h-screen bg-gray-100 font-sans" },
-          React.createElement('style', null, "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');\nbody { font-family: 'Inter', sans-serif; }"),
-          React.createElement(Header, { onLoginClick: handleShowLogin, user: user, onLogout: handleLogout, isAdmin: isAdmin }),
-          React.createElement('main', { className: "container mx-auto p-4 pt-28" },
-            React.createElement(Dashboard, { isAdmin: isAdmin, showInfoModal: showMessage })
-          ),
-          showLoginModal && (
-            React.createElement(LoginModal, { onClose: () => setShowLoginModal(false), onSuccess: handleAdminLogin, showInfoModal: showMessage })
-          ),
-          showInfoModal && (
-            React.createElement(InfoModal, { message: infoMessage, onClose: () => setShowInfoModal(false) })
-          )
-        )
-      );
-    };
-
-    const Header = ({ onLoginClick, user, onLogout, isAdmin }) => {
-      const [dateTime, setDateTime] = useState(new Date());
-
-      useEffect(() => {
-        const timer = setInterval(() => {
-          setDateTime(new Date());
-        }, 1000);
-        return () => clearInterval(timer);
-      }, []);
-
-      const formatDate = (date) => {
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        return date.toLocaleDateString('id-ID', options);
-      };
-
-      const formatTime = (date) => {
-        return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      };
-
-      return (
-        React.createElement('header', { className: "fixed top-0 left-0 w-full z-50 p-4 lg:px-8 flex flex-col md:flex-row items-center justify-between rounded-b-3xl bg-white shadow-lg" },
-          React.createElement('div', { className: "flex items-center gap-4 mb-4 md:mb-0" },
-            React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "currentColor", className: "w-12 h-12 text-blue-600" },
-              React.createElement('path', { d: "M11.25 10.5a.75.75 0 0 1 .75-.75h.001a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-.75.75h-.001a.75.75 0 0 1-.75-.75v-3ZM1.5 8.25a.75.75 0 0 0-.75.75v8.25a.75.75 0 0 0 .75.75h3.75a.75.75 0 0 0 .75-.75V11.25A9 9 0 0 1 12 2.25c1.867 0 3.654.43 5.25 1.259V9a.75.75 0 0 0 1.5 0V3.54a.75.75 0 0 0-.342-.64l-1.928-.965A11.25 11.25 0 0 0 12 1.5a11.25 11.25 0 0 0-10.5 11.25V9a.75.75 0 0 0-.75-.75Z" }),
-              React.createElement('path', { d: "M5.25 11.25a.75.75 0 0 0-.75.75v6a.75.75 0 0 0 1.5 0v-6a.75.75 0 0 0-.75-.75Z" }),
-              React.createElement('path', { d: "M18.75 8.25a.75.75 0 0 0-.75.75v8.25a.75.75 0 0 0 1.5 0V9a.75.75 0 0 0-.75-.75Z" })
-            ),
-            React.createElement('div', null,
-              React.createElement('h1', { className: "text-3xl font-bold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600" }, "RRI Sibolga"),
-              React.createElement('p', { className: "text-sm text-gray-500" }, formatDate(dateTime), " | ", formatTime(dateTime))
-            )
-          ),
-          React.createElement('div', { className: "flex flex-wrap items-center justify-center gap-3" },
-            isAdmin ? (
-              React.createElement(React.Fragment, null,
-                React.createElement('button', { onClick: onLogout, className: "px-6 py-2 rounded-full bg-red-500 text-white font-semibold shadow-md hover:bg-red-600 transition-colors" }, "Keluar Admin"),
-                React.createElement('span', { className: "px-3 py-1 bg-purple-200 text-purple-800 text-sm font-medium rounded-full" }, "Mode Admin")
-              )
-            ) : (
-              React.createElement('button', { onClick: onLoginClick, className: "px-6 py-2 rounded-full bg-green-500 text-white font-semibold shadow-md hover:bg-green-600 transition-colors" }, "Masuk sebagai Admin")
-            ),
-            React.createElement('a', { href: "https://drive.google.com/drive/folders/1K3HrgnSCTvUbxoYY5fK4XI1cvo4WxANS?usp=sharing", target: "_blank", rel: "noopener noreferrer", className: "px-6 py-2 rounded-full bg-blue-500 text-white font-semibold shadow-md hover:bg-blue-600 transition-colors text-center" }, "Unduh Persyaratan"),
-            React.createElement('a', { href: "https://docs.google.com/forms/d/e/1FAIpQLSfh0_-PQxHlgN8MPIGwVN0YBfwO9EMQxQ92cEAb818g5DloZg/viewform?usp=sharing&ouid=10580248582507153521", target: "_blank", rel: "noopener noreferrer", className: "px-6 py-2 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 transition-colors text-center" }, "Ajukan Cuti")
-          )
-        )
-      );
-    };
-
-    const Dashboard = ({ isAdmin, showInfoModal }) => {
-      const { user, db, isAuthReady, leaveTypes } = useAppContext();
-      const [employees, setEmployees] = useState([]);
-      const [searchTerm, setSearchTerm] = useState('');
-      const [onLeaveEmployees, setOnLeaveEmployees] = useState([]);
-      const [isDataLoaded, setIsDataLoaded] = useState(false);
-      const [onLeaveLoading, setOnLeaveLoading] = useState(true);
-      const [appsScriptUrl, setAppsScriptUrl] = useState('');
-
-      useEffect(() => {
-        const savedUrl = localStorage.getItem('appsScriptUrl');
-        if (savedUrl) {
-          setAppsScriptUrl(savedUrl);
-        }
-      }, []);
-
-      useEffect(() => {
-        if (!isAuthReady || !db || !user) return;
-        const employeesColRef = collection(db, 'artifacts', appId, 'public', 'data', 'employees');
-        const q = query(employeesColRef);
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-          const employeesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setEmployees(employeesData);
-          setIsDataLoaded(true);
-        }, (error) => {
-          console.error("Error fetching employees:", error);
-        });
-        return () => unsubscribe();
-      }, [isAuthReady, db, user]);
-
-      const parseDateFromDDMMYYYY = (dateString) => {
-        const parts = dateString.split('/');
-        if (parts.length === 3) {
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1;
-          const year = parseInt(parts[2], 10);
-          return new Date(year, month, day);
-        }
-        return null;
-      };
-
-      useEffect(() => {
-        const CSV_URL = appsScriptUrl;
-        const fetchLeaveData = async () => {
-          setOnLeaveLoading(true);
-          if (!CSV_URL) {
-            setOnLeaveEmployees([]);
-            setOnLeaveLoading(false);
-            return;
-          }
-          try {
-            const response = await fetch(CSV_URL);
-            if (!response.ok) {
-              throw new Error(`Failed to fetch leave data. Status: ${response.status}`);
-            }
-            const text = await response.text();
-            const rows = text.split('\n').map(row => row.trim()).filter(row => row);
-            if (rows.length < 2) {
-              setOnLeaveEmployees([]);
-              setOnLeaveLoading(false);
-              return;
-            }
-
-            const parseCSVLine = (line) => {
-              const parts = [];
-              let insideQuote = false;
-              let currentPart = '';
-              for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                const nextChar = line[i + 1] || '';
-                if (char === '"' && (i === 0 || line[i - 1] === ',')) {
-                  insideQuote = true;
-                } else if (char === '"' && nextChar === ',') {
-                  insideQuote = false;
-                  parts.push(currentPart);
-                  currentPart = '';
-                  i++;
-                } else if (char === ',' && !insideQuote) {
-                  parts.push(currentPart);
-                  currentPart = '';
-                } else {
-                  currentPart += char;
-                }
-              }
-              parts.push(currentPart);
-              return parts.map(part => part.trim().replace(/^"|"$/g, ''));
-            };
-
-            const headers = parseCSVLine(rows[0]);
-            const data = rows.slice(1).map(row => {
-              const values = parseCSVLine(row);
-              const rowData = {};
-              headers.forEach((header, index) => {
-                rowData[header] = values[index];
-              });
-              return rowData;
-            });
-
-            const nameCol = headers.find(h => h.toLowerCase().includes('nama') && h.toLowerCase().includes('pegawai'));
-            const typeCol = headers.find(h => h.toLowerCase().includes('jenis') && h.toLowerCase().includes('cuti'));
-            const startDateCol = headers.find(h => h.toLowerCase().includes('tanggal') && h.toLowerCase().includes('mulai'));
-            const endDateCol = headers.find(h => h.toLowerCase().includes('tanggal') && h.toLowerCase().includes('selesai'));
-
-            if (!nameCol || !typeCol || !startDateCol || !endDateCol) {
-              console.error("CSV headers not found. Please ensure the spreadsheet has 'Nama Pegawai', 'Jenis Cuti', 'Tanggal Mulai', and 'Tanggal Selesai'.");
-              setOnLeaveEmployees([]);
-              setOnLeaveLoading(false);
-              return;
-            }
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const activeLeaves = data.filter(leave => {
-              const startDate = parseDateFromDDMMYYYY(leave[startDateCol]);
-              const endDate = parseDateFromDDMMYYYY(leave[endDateCol]);
-              if (!startDate || !endDate) {
-                console.warn(`Skipping row due to invalid date format: Start Date: ${leave[startDateCol]}, End Date: ${leave[endDateCol]}`);
-                return false;
-              }
-              startDate.setHours(0, 0, 0, 0);
-              endDate.setHours(0, 0, 0, 0);
-              return today >= startDate && today <= endDate;
-            }).map(leave => ({
-              namaPegawai: leave[nameCol],
-              jenisCuti: leave[typeCol],
-              tanggalMulaiCuti: leave[startDateCol],
-              tanggalSelesaiCuti: leave[endDateCol],
-            }));
-            setOnLeaveEmployees(activeLeaves);
-          } catch (error) {
-            console.error("Error fetching or parsing Google Sheet data:", error);
-            showInfoModal(`Gagal mengambil data cuti: ${error.message}`);
-          } finally {
-            setOnLeaveLoading(false);
-          }
-        };
-
-        if (appsScriptUrl) {
-          fetchLeaveData();
-          const intervalId = setInterval(fetchLeaveData, 600000); // Fetch every 10 minutes
-          return () => clearInterval(intervalId);
-        }
-      }, [appsScriptUrl, showInfoModal]);
-
-      const onSearchChange = (e) => {
-        setSearchTerm(e.target.value);
-      };
-
-      const filteredEmployees = employees.filter(emp =>
-        emp.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-      const EmployeeTable = () => {
-        return (
-          React.createElement('div', { className: "bg-white p-6 rounded-3xl shadow-lg mt-8 overflow-x-auto" },
-            React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4" }, "Data Pegawai RRI Sibolga"),
-            React.createElement('input', {
-              type: "text",
-              placeholder: "Cari pegawai...",
-              value: searchTerm,
-              onChange: onSearchChange,
-              className: "w-full p-3 mb-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            }),
-            React.createElement('table', { className: "min-w-full leading-normal text-left" },
-              React.createElement('thead', null,
-                React.createElement('tr', null,
-                  React.createElement('th', { className: "px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tl-xl" }, "Nama Pegawai"),
-                  Object.keys(leaveTypes).map(type =>
-                    React.createElement('th', { key: type, className: "px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" }, type)
-                  )
-                )
-              ),
-              React.createElement('tbody', null,
-                filteredEmployees.length > 0 ? filteredEmployees.map(emp =>
-                  React.createElement('tr', { key: emp.id, className: "hover:bg-gray-50 transition-colors" },
-                    React.createElement('td', { className: "px-5 py-5 border-b border-gray-200 text-sm" },
-                      React.createElement('p', { className: "text-gray-900 whitespace-no-wrap" }, emp.name)
-                    ),
-                    Object.keys(leaveTypes).map(type =>
-                      React.createElement('td', { key: type, className: "px-5 py-5 border-b border-gray-200 text-sm" },
-                        React.createElement('p', { className: "text-gray-900 whitespace-no-wrap" },
-                          `${(emp.leaveQuota && emp.leaveQuota[type]) - (emp.leaveUsed && emp.leaveUsed[type]) || 0} dari ${emp.leaveQuota && emp.leaveQuota[type] || 0}`
-                        )
-                      )
-                    )
-                  )
-                ) : (
-                  React.createElement('tr', null,
-                    React.createElement('td', { colSpan: Object.keys(leaveTypes).length + 1, className: "px-5 py-5 border-b border-gray-200 text-center text-sm text-gray-500" }, "Tidak ada pegawai ditemukan.")
-                  )
-                )
-              )
-            )
-          )
-        );
-      };
-
-      const OnLeaveTable = () => {
-        return (
-          React.createElement('div', { className: "bg-white p-6 rounded-3xl shadow-lg mt-8 overflow-x-auto" },
-            React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4" }, "Pegawai Sedang Cuti Hari Ini"),
-            onLeaveLoading ? (
-              React.createElement('div', { className: "flex items-center justify-center py-8 text-gray-500" }, "Memuat data cuti...")
-            ) : onLeaveEmployees.length > 0 ? (
-              React.createElement('table', { className: "min-w-full leading-normal text-left" },
-                React.createElement('thead', null,
-                  React.createElement('tr', null,
-                    React.createElement('th', { className: "px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tl-xl" }, "Nama Pegawai"),
-                    React.createElement('th', { className: "px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" }, "Jenis Cuti"),
-                    React.createElement('th', { className: "px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" }, "Tanggal Mulai"),
-                    React.createElement('th', { className: "px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tr-xl" }, "Tanggal Selesai")
-                  )
-                ),
-                React.createElement('tbody', null,
-                  onLeaveEmployees.map((leave, index) =>
-                    React.createElement('tr', { key: index, className: "hover:bg-gray-50 transition-colors" },
-                      React.createElement('td', { className: "px-5 py-5 border-b border-gray-200 text-sm" },
-                        React.createElement('p', { className: "text-gray-900 whitespace-no-wrap" }, leave.namaPegawai)
-                      ),
-                      React.createElement('td', { className: "px-5 py-5 border-b border-gray-200 text-sm" },
-                        React.createElement('p', { className: "text-gray-900 whitespace-no-wrap" }, leave.jenisCuti)
-                      ),
-                      React.createElement('td', { className: "px-5 py-5 border-b border-gray-200 text-sm" },
-                        React.createElement('p', { className: "text-gray-900 whitespace-no-wrap" }, leave.tanggalMulaiCuti)
-                      ),
-                      React.createElement('td', { className: "px-5 py-5 border-b border-gray-200 text-sm" },
-                        React.createElement('p', { className: "text-gray-900 whitespace-no-wrap" }, leave.tanggalSelesaiCuti)
-                      )
-                    )
-                  )
-                )
-              )
-            ) : (
-              React.createElement('div', { className: "text-center py-8 text-gray-500" }, "Tidak ada pegawai yang sedang cuti hari ini.")
-            )
-          )
-        );
-      };
-
-      const AdminDashboard = () => {
-        const [appsScriptUrlInput, setAppsScriptUrlInput] = useState(appsScriptUrl);
-        const handleSaveUrl = () => {
-          localStorage.setItem('appsScriptUrl', appsScriptUrlInput);
-          setAppsScriptUrl(appsScriptUrlInput);
-          showInfoModal('URL Google Apps Script berhasil disimpan!');
-        };
-        const handleUpdate = async () => {
-          if (employees.length === 0) {
-            showInfoModal('Tidak ada data pegawai untuk diperbarui.');
-            return;
-          }
-          const employeeCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'employees');
-          try {
-            await Promise.all(employees.map(emp => {
-              const newLeaveQuota = { ...emp.leaveQuota, 'Cuti Tahunan': 12 };
-              return updateDoc(doc(employeeCollectionRef, emp.id), {
-                leaveQuota: newLeaveQuota,
-                leaveUsed: Object.fromEntries(Object.keys(newLeaveQuota).map(key => [key, 0]))
-              });
-            }));
-            showInfoModal('Data cuti tahunan berhasil direset dan diperbarui untuk semua pegawai!');
-          } catch (error) {
-            console.error("Error resetting annual leave:", error);
-            showInfoModal('Gagal mereset cuti tahunan: ' + error.message);
-          }
-        };
-
-        const DeleteEmployeeModal = ({ employee, onConfirm, onCancel }) => {
-          return (
-            React.createElement('div', { className: "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4" },
-              React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg max-w-sm w-full text-center" },
-                React.createElement('h3', { className: "text-lg font-semibold mb-4" }, "Konfirmasi Hapus"),
-                React.createElement('p', { className: "text-gray-700 mb-6" }, `Apakah Anda yakin ingin menghapus data pegawai "${employee.name}"?`),
-                React.createElement('div', { className: "flex justify-center gap-4" },
-                  React.createElement('button', { onClick: onCancel, className: "px-6 py-2 rounded-full bg-gray-300 text-gray-800 font-semibold hover:bg-gray-400 transition-colors" }, "Batal"),
-                  React.createElement('button', { onClick: onConfirm, className: "px-6 py-2 rounded-full bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors" }, "Hapus")
-                )
-              )
-            )
-          );
-        };
-
-        const [showDeleteModal, setShowDeleteModal] = useState(false);
-        const [employeeToDelete, setEmployeeToDelete] = useState(null);
-
-        const handleDelete = (employee) => {
-          setEmployeeToDelete(employee);
-          setShowDeleteModal(true);
-        };
-
-        const confirmDelete = async () => {
-          if (employeeToDelete) {
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'employees', employeeToDelete.id);
-            try {
-              await deleteDoc(docRef);
-              showInfoModal(`Data pegawai "${employeeToDelete.name}" berhasil dihapus.`);
-            } catch (error) {
-              console.error("Error deleting document:", error);
-              showInfoModal('Gagal menghapus data pegawai: ' + error.message);
-            } finally {
-              setShowDeleteModal(false);
-              setEmployeeToDelete(null);
-            }
-          }
-        };
-
-        return (
-          React.createElement(React.Fragment, null,
-            React.createElement('div', { className: "bg-white p-6 rounded-3xl shadow-lg mt-8" },
-              React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4" }, "Panel Admin"),
-              React.createElement('p', { className: "text-gray-700 mb-4" }, "Panel ini memungkinkan Anda untuk mengelola data cuti pegawai."),
-              React.createElement('div', { className: "flex flex-col md:flex-row items-center gap-4 mb-6" },
-                React.createElement('input', {
-                  type: "text",
-                  placeholder: "Masukkan URL Google Apps Script...",
-                  value: appsScriptUrlInput,
-                  onChange: (e) => setAppsScriptUrlInput(e.target.value),
-                  className: "flex-grow p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                }),
-                React.createElement('button', { onClick: handleSaveUrl, className: "w-full md:w-auto px-6 py-3 rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors" }, "Simpan URL"),
-              ),
-              React.createElement('button', { onClick: handleUpdate, className: "w-full px-6 py-3 rounded-full bg-yellow-500 text-white font-semibold hover:bg-yellow-600 transition-colors" }, "Reset Cuti Tahunan Semua Pegawai"),
-            ),
-            React.createElement('div', { className: "bg-white p-6 rounded-3xl shadow-lg mt-8 overflow-x-auto" },
-              React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4" }, "Manajemen Data Pegawai"),
-              React.createElement('table', { className: "min-w-full leading-normal text-left" },
-                React.createElement('thead', null,
-                  React.createElement('tr', null,
-                    React.createElement('th', { className: "px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tl-xl" }, "Nama Pegawai"),
-                    React.createElement('th', { className: "px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" }, "Aksi")
-                  )
-                ),
-                React.createElement('tbody', null,
-                  employees.map(emp =>
-                    React.createElement('tr', { key: emp.id, className: "hover:bg-gray-50 transition-colors" },
-                      React.createElement('td', { className: "px-5 py-5 border-b border-gray-200 text-sm" },
-                        React.createElement('p', { className: "text-gray-900 whitespace-no-wrap" }, emp.name)
-                      ),
-                      React.createElement('td', { className: "px-5 py-5 border-b border-gray-200 text-sm" },
-                        React.createElement('button', { onClick: () => handleDelete(emp), className: "px-4 py-2 rounded-full bg-red-500 text-white font-semibold text-sm hover:bg-red-600 transition-colors" }, "Hapus")
-                      )
-                    )
-                  )
-                )
-              )
-            ),
-            showDeleteModal && (
-              React.createElement(DeleteEmployeeModal, {
-                employee: employeeToDelete,
-                onConfirm: confirmDelete,
-                onCancel: () => setShowDeleteModal(false)
-              })
-            )
-          )
-        );
-      };
-
-      return (
-        React.createElement(React.Fragment, null,
-          isAdmin && React.createElement(AdminDashboard, null),
-          React.createElement('div', { className: "grid gap-8" },
-            React.createElement(EmployeeTable, null),
-            React.createElement(OnLeaveTable, null)
-          )
-        )
-      );
-    };
-
-    const LoginModal = ({ onClose, onSuccess, showInfoModal }) => {
-      const { auth } = useAppContext();
-      const [password, setPassword] = useState('');
-
-      const handleLogin = async () => {
-        if (password === ADMIN_PASSWORD) {
-          onSuccess();
-        } else {
-          showInfoModal('Password salah. Silakan coba lagi.');
-        }
-      };
-
-      return (
-        React.createElement('div', { className: "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4" },
-          React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg max-w-sm w-full text-center" },
-            React.createElement('h3', { className: "text-lg font-semibold mb-4" }, "Login Admin"),
-            React.createElement('input', {
-              type: "password",
-              placeholder: "Password",
-              value: password,
-              onChange: (e) => setPassword(e.target.value),
-              className: "w-full p-3 mb-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            }),
-            React.createElement('div', { className: "flex justify-center gap-4" },
-              React.createElement('button', { onClick: onClose, className: "px-6 py-2 rounded-full bg-gray-300 text-gray-800 font-semibold hover:bg-gray-400 transition-colors" }, "Batal"),
-              React.createElement('button', { onClick: handleLogin, className: "px-6 py-2 rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors" }, "Login")
-            )
-          )
-        )
-      );
-    };
-
-    const InfoModal = ({ onClose, message }) => {
-      return (
-        React.createElement('div', { className: "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4" },
-          React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg max-w-sm w-full text-center" },
-            React.createElement('h3', { className: "text-lg font-semibold mb-4" }, "Informasi"),
-            React.createElement('p', { className: "text-gray-700 mb-6" }, message),
-            React.createElement('button', { onClick: onClose, className: "px-6 py-2 rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors" }, "Tutup")
-          )
-        )
-      );
-    };
-
-    window.onload = function() {
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(React.createElement(AppProvider, null, React.createElement(App, null)));
-    };
-  </script>
+    </style>
 </head>
-<body class="bg-gray-100">
-  <div id="root"></div>
+<body class="p-6 md:p-12 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 md:p-10 rounded-xl shadow-lg w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Daftar Catatan</h1>
+        
+        <!-- Area Input Catatan -->
+        <div class="flex items-center space-x-4 mb-6">
+            <input type="text" id="note-input" placeholder="Tulis catatan baru..." class="flex-grow p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200">
+            <button id="add-note-btn" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-200">Tambah</button>
+        </div>
+        
+        <!-- Daftar Catatan -->
+        <div id="notes-list" class="space-y-4">
+            <!-- Catatan akan dimuat di sini oleh JavaScript -->
+        </div>
+
+        <!-- ID Pengguna (Wajib ditampilkan untuk debugging) -->
+        <div class="mt-8 pt-4 border-t border-gray-200 text-sm text-gray-500 text-center">
+            ID Pengguna: <span id="user-id" class="font-mono text-gray-700 break-all">Memuat...</span>
+        </div>
+
+        <!-- Pesan status -->
+        <div id="status-message" class="mt-4 text-center text-red-500 hidden"></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
+        let userId = null;
+
+        const noteInput = document.getElementById('note-input');
+        const addNoteBtn = document.getElementById('add-note-btn');
+        const notesList = document.getElementById('notes-list');
+        const userIdSpan = document.getElementById('user-id');
+        const statusMessageDiv = document.getElementById('status-message');
+
+        function showMessage(message, isError = false) {
+            statusMessageDiv.textContent = message;
+            statusMessageDiv.className = `mt-4 text-center ${isError ? 'text-red-500' : 'text-green-500'}`;
+            statusMessageDiv.style.display = 'block';
+        }
+
+        async function initializeFirebase() {
+            try {
+                // Initialize Firebase App
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Wait for the auth state to be ready
+                await new Promise((resolve) => {
+                    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            userIdSpan.textContent = userId;
+                            console.log("Authenticated as:", userId);
+                            // Start listening to notes after auth is ready
+                            setupNotesListener();
+                            resolve();
+                        } else {
+                            // If no user, try to sign in
+                            try {
+                                if (initialAuthToken) {
+                                    await signInWithCustomToken(auth, initialAuthToken);
+                                } else {
+                                    await signInAnonymously(auth);
+                                }
+                            } catch (error) {
+                                showMessage(`Autentikasi gagal: ${error.message}`, true);
+                                console.error("Firebase Auth Error:", error);
+                            }
+                        }
+                        unsubscribe();
+                    });
+                });
+
+            } catch (error) {
+                showMessage("Gagal menginisialisasi Firebase. Periksa konfigurasi.", true);
+                console.error("Firebase Initialization Error:", error);
+            }
+        }
+
+        function setupNotesListener() {
+            if (!db || !userId) {
+                console.error("Database atau User ID tidak tersedia.");
+                return;
+            }
+
+            // Path koleksi harus mengikuti struktur yang ditentukan untuk data privat
+            const notesCollectionPath = `artifacts/${appId}/users/${userId}/notes`;
+            const q = query(collection(db, notesCollectionPath));
+
+            // onSnapshot untuk mendengarkan perubahan secara real-time
+            onSnapshot(q, (querySnapshot) => {
+                notesList.innerHTML = '';
+                querySnapshot.forEach((doc) => {
+                    const note = doc.data();
+                    const noteItem = document.createElement('div');
+                    noteItem.className = 'bg-gray-100 p-4 rounded-lg flex items-center justify-between shadow-sm';
+                    noteItem.innerHTML = `
+                        <span class="text-gray-700">${note.text}</span>
+                    `;
+                    notesList.appendChild(noteItem);
+                });
+            }, (error) => {
+                showMessage("Gagal memuat catatan secara real-time.", true);
+                console.error("Firestore Error:", error);
+            });
+        }
+
+        // Fungsi untuk menambahkan catatan baru
+        async function addNote() {
+            const noteText = noteInput.value.trim();
+            if (noteText === "") {
+                showMessage("Catatan tidak boleh kosong.", true);
+                return;
+            }
+
+            if (!db || !userId) {
+                showMessage("Firebase belum siap. Coba lagi.", true);
+                return;
+            }
+
+            try {
+                const notesCollectionPath = `artifacts/${appId}/users/${userId}/notes`;
+                await addDoc(collection(db, notesCollectionPath), {
+                    text: noteText,
+                    createdAt: new Date()
+                });
+                noteInput.value = ''; // Kosongkan input setelah berhasil
+                showMessage("Catatan berhasil ditambahkan!", false);
+            } catch (error) {
+                showMessage(`Gagal menambahkan catatan: ${error.message}`, true);
+                console.error("Add Note Error:", error);
+            }
+        }
+
+        // Tambahkan event listener ke tombol
+        addNoteBtn.addEventListener('click', addNote);
+
+        // Inisialisasi Firebase saat halaman dimuat
+        window.onload = initializeFirebase;
+
+    </script>
 </body>
 </html>
