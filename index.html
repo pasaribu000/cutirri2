@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aplikasi Cuti Pegawai RRI Sibolga</title>
+  <!-- Load Tailwind CSS from CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load React and ReactDOM from CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <!-- Load Firebase libraries from CDN -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -123,47 +126,47 @@
       const setupInitialData = async (db) => {
         try {
           if (!db) return;
-          setTimeout(async () => {
-            const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'appSettings');
-            const settingsDocSnap = await getDoc(settingsDocRef);
-            if (!settingsDocSnap.exists()) {
-              await setDoc(settingsDocRef, { leaveTypes: INITIAL_LEAVE_TYPES });
-              console.log("Initial leave types data set up in Firestore.");
-            }
+          const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'appSettings');
+          const settingsDocSnap = await getDoc(settingsDocRef);
+          if (!settingsDocSnap.exists()) {
+            await setDoc(settingsDocRef, { leaveTypes: INITIAL_LEAVE_TYPES });
+            console.log("Initial leave types data set up in Firestore.");
+          }
 
-            const employeeCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'employees');
-            const employeeDocs = await getDocs(employeeCollectionRef);
-            if (employeeDocs.empty) {
-              console.log("Employees collection is empty. Adding initial data...");
-              for (const name of initialEmployees) {
-                const id = name.split(',')[0].trim().toLowerCase().replace(/\s/g, '-');
-                await setDoc(doc(employeeCollectionRef, id), {
-                  name,
-                  leaveQuota: INITIAL_LEAVE_TYPES,
-                  leaveUsed: Object.fromEntries(Object.keys(INITIAL_LEAVE_TYPES).map(key => [key, 0])),
-                  leaveNotes: Object.fromEntries(Object.keys(INITIAL_LEAVE_TYPES).map(key => [key, ""])),
-                  createdAt: new Date()
-                });
-              }
-              console.log("Initial employee data loaded to Firestore.");
-            } else {
-              console.log("Employees collection already exists. Skipping initial data setup.");
+          const employeeCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'employees');
+          const employeeDocs = await getDocs(employeeCollectionRef);
+          if (employeeDocs.empty) {
+            console.log("Employees collection is empty. Adding initial data...");
+            for (const name of initialEmployees) {
+              const id = name.split(',')[0].trim().toLowerCase().replace(/\s/g, '-');
+              await setDoc(doc(employeeCollectionRef, id), {
+                name,
+                leaveQuota: INITIAL_LEAVE_TYPES,
+                leaveUsed: Object.fromEntries(Object.keys(INITIAL_LEAVE_TYPES).map(key => [key, 0])),
+                leaveNotes: Object.fromEntries(Object.keys(INITIAL_LEAVE_TYPES).map(key => [key, ""])),
+                createdAt: new Date()
+              });
             }
-          }, 50);
+            console.log("Initial employee data loaded to Firestore.");
+          } else {
+            console.log("Employees collection already exists. Skipping initial data setup.");
+          }
         } catch (error) {
           console.error("Error setting up initial data:", error);
         }
       };
 
       const value = { user, isAuthReady, db, auth, userId, leaveTypes };
+      
+      // FIX: Correctly render the context provider with children inside.
       return (
-        AppContext.Provider,
-        { value: value },
-        loading ? (
-          React.createElement('div', { className: "flex items-center justify-center min-h-screen bg-gray-100" },
-            React.createElement('div', { className: "text-xl text-gray-700" }, "Memuat...")
-          )
-        ) : children
+        React.createElement(AppContext.Provider, { value: value },
+          loading ? (
+            React.createElement('div', { className: "flex items-center justify-center min-h-screen bg-gray-100" },
+              React.createElement('div', { className: "text-xl text-gray-700" }, "Memuat...")
+            )
+          ) : children
+        )
       );
     };
 
@@ -177,13 +180,13 @@
       const [isAdmin, setIsAdmin] = useState(false);
 
       const showMessage = (message) => {
-        setShowInfoModal(true);
         setInfoMessage(message);
+        setShowInfoModal(true);
       };
 
       const handleLogout = async () => {
         try {
-          if (auth.currentUser) {
+          if (auth && auth.currentUser) {
             await signOut(auth);
           }
           setIsAdmin(false);
