@@ -12,6 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <style>
+    /* ... (CSS tetap sama seperti sebelumnya) ... */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -158,54 +159,32 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.15);
     }
 
-    .pegawaiHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
     .pegawaiName {
       font-size: 18px;
       font-weight: 600;
       color: #222;
     }
 
-    .cutiList {
+    /* Untuk daftar pegawai */
+    h2#pegawai {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    #listPegawai {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
     }
 
-    .edit-btn {
-      margin-top: 8px;
-      cursor: pointer;
-      color: #007bff;
-      font-weight: 600;
-      font-size: 14px;
-      text-decoration: underline;
-    }
-
-    #cutiHarianContainer {
-      margin: 20px;
-      padding: 15px;
+    .pegawaiCard {
       background-color: #fff;
+      padding: 15px;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      min-height: 50px;
-    }
-
-    /* Responsiveness */
-    @media(max-width: 600px) {
-      #header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-      }
-
-      #waktu {
-        margin-top: 10px;
-      }
+      width: 200px;
+      text-align: center;
     }
   </style>
 </head>
@@ -234,7 +213,7 @@
     </div>
   </div>
 
-  <!-- Infografis Kuota Cuti -->
+  <!-- Info Kuota -->
   <h2>Kuota Cuti</h2>
   <div id="kuotaCutiContainer"></div>
 
@@ -242,16 +221,16 @@
   <h2 style="text-align:center;">Cari Pegawai</h2>
   <input type="text" id="searchInput" placeholder="Masukkan nama pegawai..." />
 
-  <!-- Container utama pegawai -->
+  <!-- Container pegawai berdasarkan pencarian -->
   <div id="pegawaiContainer"></div>
 
-  <!-- Pegawai Cuti Hari Ini -->
-  <h2 style="text-align:center;">Pegawai Cuti Hari Ini</h2>
-  <div id="cutiHarianContainer">Loading data...</div>
-
-  <!-- Container Daftar Pegawai -->
+  <!-- Daftar Pegawai sebagai kartu -->
   <h2 style="text-align:center;">Daftar Pegawai</h2>
   <div id="listPegawai"></div>
+
+  <!-- Cuti Hari Ini -->
+  <h2 style="text-align:center;">Pegawai Cuti Hari Ini</h2>
+  <div id="cutiHarianContainer">Loading data...</div>
 
   <script>
     // ================== Konfigurasi Firebase ==================
@@ -268,12 +247,11 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Mode awal adalah user
+    // Mode awal
     let isAdmin = false;
-
     const PASSWORD_ADMIN = "rriadmin2025";
 
-    // ================== Fungsi waktu dan tanggal ==================
+    // Fungsi waktu
     function updateTime() {
       const now = new Date();
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -292,13 +270,13 @@
         alert('Anda masuk sebagai Admin.');
         loadKuota();
         loadData();
-        document.getElementById('loginAdminBtn').style.display = 'none'; // sembunyikan tombol login
+        document.getElementById('loginAdminBtn').style.display = 'none';
       } else {
         alert('Password salah!');
       }
     });
 
-    // ================== Toggle Mode ==================
+    // ================== Mode toggle ==================
     document.getElementById('toggleModeBtn').addEventListener('click', () => {
       if (!isAdmin) {
         alert('Silakan login sebagai admin terlebih dahulu.');
@@ -308,7 +286,7 @@
       document.getElementById('toggleModeBtn').textContent = 'Mode: User';
       loadKuota();
       loadData();
-      document.getElementById('loginAdminBtn').style.display = 'inline-block'; // tampilkan kembali tombol login
+      document.getElementById('loginAdminBtn').style.display = 'inline-block';
     });
 
     // ================== Load Kuota ==================
@@ -498,11 +476,9 @@
       "Andrian Mendrofa"
     ];
 
-    // ================== Load dan tampilkan kartu pegawai ==================
     function tampilkanKartuPegawai() {
       const container = document.getElementById('listPegawai');
       container.innerHTML = '';
-
       daftarPegawai.forEach(nama => {
         const card = document.createElement('div');
         card.className = 'pegawaiCard';
@@ -522,14 +498,14 @@
       loadData();
       fetchCutiHariIni();
 
-      // Update waktu & tanggal
-      setInterval(updateTime, 1000);
-      document.getElementById('searchInput').addEventListener('input', filterPegawai);
-      
-      // Tampilkan kartu pegawai dari daftar manual
+      // Tampilkan daftar pegawai kartu
       tampilkanKartuPegawai();
 
-      // Set mode awal
+      // waktu
+      setInterval(updateTime, 1000);
+      document.getElementById('searchInput').addEventListener('input', filterPegawai);
+
+      // Mode awal
       document.getElementById('toggleModeBtn').textContent = `Mode: ${isAdmin ? 'Admin' : 'User'}`;
     };
   </script>
