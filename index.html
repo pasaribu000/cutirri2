@@ -12,7 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <style>
-    /* CSS lengkap sesuai sebelumnya */
+    /* CSS sesuai sebelumnya, tambahkan untuk form dan kartu */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -26,6 +26,7 @@
       line-height: 1.6;
     }
 
+    /* Gaya tombol dan layout lainnya */
     #action-buttons {
       display: flex;
       justify-content: center;
@@ -88,66 +89,20 @@
       color: #007bff;
     }
 
-    #kuotaCutiContainer {
+    #listPegawai {
       display: flex;
       flex-wrap: wrap;
       gap: 15px;
       justify-content: center;
-      padding: 10px;
-    }
-
-    .kuotaItem {
-      background-color: #fff;
-      flex: 1 1 150px;
-      max-width: 200px;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      text-align: center;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .kuotaItem:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 12px rgba(0,0,0,0.15);
-    }
-
-    .kuotaItem h4 {
-      margin-bottom: 10px;
-      font-size: 16px;
-      color: #333;
-    }
-
-    #searchInput {
-      display: block;
-      width: calc(100% - 40px);
-      max-width: 400px;
-      margin: 20px auto;
-      padding: 12px 15px;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-
-    #searchInput:focus {
-      border-color: #007bff;
-      outline: none;
-    }
-
-    #pegawaiContainer {
-      padding: 10px 20px;
+      margin: 20px;
     }
 
     .pegawaiCard {
       background-color: #fff;
       padding: 15px;
-      margin-bottom: 15px;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      width: 100%;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
+      width: 300px; /* lebih luas agar muat form */
     }
 
     .pegawaiCard:hover {
@@ -157,81 +112,56 @@
     .pegawaiName {
       font-size: 18px;
       font-weight: 600;
+      margin-bottom: 8px;
       color: #222;
     }
 
-    /* Untuk form edit */
-    .edit-section {
-      margin-top: 10px;
+    /* Style form input cuti */
+    .form-group {
+      margin-bottom: 8px;
     }
 
-    .edit-section input {
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .form-group input {
       width: 80px;
       padding: 4px;
-      margin: 2px 0;
+      margin-top: 4px;
     }
 
-    .btn-save {
-      margin-top: 8px;
+    /* Tombol simpan */
+    .btn-simpan {
       background-color: #28a745;
       color: #fff;
       border: none;
       padding: 6px 12px;
       border-radius: 5px;
       cursor: pointer;
+      margin-top: 10px;
     }
 
-    .btn-save:hover {
+    .btn-simpan:hover {
       background-color: #218838;
     }
   </style>
 </head>
 <body>
-  <!-- Login dan mode toggle -->
+  <!-- Tombol login dan mode -->
   <div style="text-align:center; margin:10px;">
     <button id="loginAdminBtn" class="btn" style="background-color:#dc3545;">Login Admin</button>
     <button id="toggleModeBtn" class="btn" style="background-color:#28a745;">Mode: User</button>
   </div>
 
-  <!-- Tombol aksi -->
-  <div id="action-buttons">
-    <a href="https://forms.gle/ycdVVbSAdN7e6Hbz6" target="_blank" class="btn">Ajukan Cuti</a>
-    <a href="https://drive.google.com/drive/folders/1K3HrgnSCTvUbxoYY5fK4XI1cvo4WxANS?usp=drive_link" target="_blank" class="btn">Unduh Persyaratan</a>
-  </div>
-
-  <!-- Header -->
-  <div id="header">
-    <div id="logo-title">
-      <img id="logo" src="https://upload.wikimedia.org/wikipedia/commons/4/4f/Radio_icon.svg" alt="Logo Radio" />
-      <div id="title">Manajemen Cuti RRI Sibolga</div>
-    </div>
-    <div id="waktu">
-      <div id="tanggal"></div>
-      <div id="jam"></div>
-    </div>
-  </div>
-
-  <!-- Kuota Cuti -->
-  <h2>Kuota Cuti</h2>
-  <div id="kuotaCutiContainer"></div>
-
-  <!-- Pencarian Pegawai -->
-  <h2 style="text-align:center;">Cari Pegawai</h2>
-  <input type="text" id="searchInput" placeholder="Masukkan nama pegawai..." />
-
-  <!-- Container pegawai dari pencarian -->
-  <div id="pegawaiContainer"></div>
-
-  <!-- Daftar Pegawai sebagai kartu -->
+  <!-- Container utama -->
   <h2 style="text-align:center;">Daftar Pegawai</h2>
   <div id="listPegawai"></div>
 
-  <!-- Pegawai Cuti Hari Ini -->
-  <h2 style="text-align:center;">Pegawai Cuti Hari Ini</h2>
-  <div id="cutiHarianContainer">Loading data...</div>
-
   <script>
-    // ================== Konfigurasi Firebase ==================
+    // ================== Firebase Config ==================
     const firebaseConfig = {
       apiKey: "AIzaSyBBDMhvpAboYaEUIfo0eyzjZxK6iZyQwpo",
       authDomain: "cutirri.firebaseapp.com",
@@ -241,23 +171,19 @@
       appId: "1:310950239670:web:3b58351db2c5946f8c3517",
       measurementId: "G-BENDLYTZ2Z"
     };
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Mode awal
     let isAdmin = false;
     const PASSWORD_ADMIN = "rriadmin2025";
 
     // Fungsi waktu
     function updateTime() {
       const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      document.getElementById('tanggal').textContent = now.toLocaleDateString('id-ID', options);
-      document.getElementById('jam').textContent = now.toLocaleTimeString('id-ID');
+      document.getElementById('tanggal')?.remove(); // hapus jika ada
+      document.getElementById('jam')?.remove();
+      // tidak perlu di sini, fokus ke fitur utama
     }
-    setInterval(updateTime, 1000);
-    updateTime();
 
     // ================== Login Admin ==================
     document.getElementById('loginAdminBtn').addEventListener('click', () => {
@@ -265,10 +191,8 @@
       if (password === PASSWORD_ADMIN) {
         isAdmin = true;
         document.getElementById('toggleModeBtn').textContent = 'Mode: Admin';
+        loadPegawai();
         alert('Anda masuk sebagai Admin.');
-        loadKuota();
-        fetchCutiHariIni();
-        fetchAndDisplayPegawai(); // Panggil fungsi untuk tampilkan data pegawai dari Firebase
         document.getElementById('loginAdminBtn').style.display = 'none';
       } else {
         alert('Password salah!');
@@ -283,222 +207,86 @@
       }
       isAdmin = false;
       document.getElementById('toggleModeBtn').textContent = 'Mode: User';
-      loadKuota();
-      fetchCutiHariIni();
-      fetchAndDisplayPegawai(); // Refresh data pegawai dari Firebase
+      loadPegawai();
       document.getElementById('loginAdminBtn').style.display = 'inline-block';
     });
 
-    // ================== Load Kuota ==================
-    const kuotaDocRef = db.collection('kuota_cuti').doc('kuota');
-
-    function loadKuota() {
-      kuotaDocRef.get().then(doc => {
-        let data = {
-          tahunan: 0,
-          sakit: 0,
-          besar: 0,
-          melahirkan: 0,
-          penting: 0,
-          luar_negara: 0
-        };
-        if (doc.exists) {
-          data = doc.data();
-        }
-        renderKuota(data);
-      });
-    }
-
-    function renderKuota(data) {
-      const container = document.getElementById('kuotaCutiContainer');
+    // ================== Data pegawai dari Firebase ==================
+    function loadPegawai() {
+      // Bersihkan
+      const container = document.getElementById('listPegawai');
       container.innerHTML = '';
-      const kuotaList = [
-        { key: 'tahunan', label: 'Cuti Tahunan' },
-        { key: 'sakit', label: 'Cuti Sakit' },
-        { key: 'besar', label: 'Cuti Besar' },
-        { key: 'melahirkan', label: 'Cuti Melahirkan' },
-        { key: 'penting', label: 'Cuti Karena Alasan Penting' },
-        { key: 'luar_negara', label: 'Cuti di Luar Tanggungan Negara' }
-      ];
-      kuotaList.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'kuotaItem';
 
-        const h4 = document.createElement('h4');
-        h4.textContent = item.label;
-        div.appendChild(h4);
-
-        const span = document.createElement('span');
-        span.textContent = data[item.key] !== undefined ? data[item.key] : 0;
-        span.id = `kuota_${item.key}`;
-        div.appendChild(span);
-
-        if (isAdmin) {
-          const editBtn = document.createElement('div');
-          editBtn.className = 'edit-btn';
-          editBtn.textContent = 'Edit';
-          editBtn.onclick = () => {
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.value = data[item.key];
-            input.style.width = '80px';
-            input.id = `input_${item.key}`;
-            div.replaceChild(input, span);
-            editBtn.textContent = 'Simpan';
-            // Simpan ke Firebase
-            editBtn.onclick = () => {
-              const newVal = parseInt(document.getElementById(`input_${item.key}`).value);
-              if (isNaN(newVal)) return;
-              const updateObj = {};
-              updateObj[`kuota_${item.key}`] = newVal;
-              kuotaDocRef.set(updateObj, { merge: true }).then(() => {
-                loadKuota();
-              });
-            };
-          };
-          div.appendChild(editBtn);
-        }
-
-        container.appendChild(div);
-      });
-    }
-
-    // ================== Fetch Cuti Hari Ini ==================
-    const spreadsheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSzbKpHevX7OanEk05EQ51zhE7toeltg4Cu1n7OnS958vZcgop4R6j75OO9LWSPIbl210nan07F_mDh/pub?gid=443906944&single=true";
-
-    function fetchCutiHariIni() {
-      fetch(spreadsheetUrl)
-        .then(response => response.text())
-        .then(csvText => {
-          const rows = csvText.split('\n').map(row => row.split(','));
-          const headers = rows[0];
-          const idxNama = headers.indexOf('Nama Pegawai');
-          const idxTanggalMulai = headers.indexOf('Tanggal Mulai Cuti');
-          const idxTanggalSelesai = headers.indexOf('Tanggal Selesai Cuti');
-          const todayStr = new Date().toISOString().split('T')[0];
-
-          const pegawaiCutiHariIni = [];
-          for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (row.length < headers.length) continue;
-            const nama = row[idxNama];
-            const tglMulai = row[idxTanggalMulai];
-            const tglSelesai = row[idxTanggalSelesai];
-            if (tglMulai && tglSelesai && tglMulai <= todayStr && tglSelesai >= todayStr) {
-              pegawaiCutiHariIni.push(nama);
-            }
-          }
-
-          const container = document.getElementById('cutiHarianContainer');
-          container.innerHTML = '';
-          if (pegawaiCutiHariIni.length === 0) {
-            container.textContent = 'Tidak ada pegawai cuti hari ini.';
-          } else {
-            const ul = document.createElement('ul');
-            pegawaiCutiHariIni.forEach(nama => {
-              const li = document.createElement('li');
-              li.textContent = nama;
-              ul.appendChild(li);
-            });
-            container.appendChild(ul);
-          }
-        })
-        .catch(error => {
-          document.getElementById('cutiHarianContainer').textContent = 'Gagal mengambil data.';
-          console.error('Error fetching spreadsheet:', error);
-        });
-    }
-
-    // ================== Data pegawai (dari Firebase) ==================
-    // Sekarang kita akan menampilkan dan mengupdate data dari Firebase
-    let pegawaiData = {}; // objek untuk cache data pegawai
-
-    function fetchAndDisplayPegawai() {
-      // Ambil semua dokumen pegawai dari collection
       db.collection('pegawai').get()
         .then(querySnapshot => {
-          // Bersihkan container
-          document.getElementById('listPegawai').innerHTML = '';
-
           querySnapshot.forEach(doc => {
-            const data = doc.data(); // data pegawai
+            const data = doc.data();
             const nama = data.nama || 'Tanpa Nama';
-            const nik = data.nik || 'NIK Tidak Diketahui';
-
-            // Simpan cache
-            pegawaiData[doc.id] = data;
+            const nik = data.nik || 'NIK tidak diketahui';
+            const cuti = data.cutiTerpakai || {}; // object semua cuti
 
             // Buat kartu
             const card = document.createElement('div');
             card.className = 'pegawaiCard';
 
-            // header nama dan nik
+            // Nama dan nik
             const namaEl = document.createElement('div');
             namaEl.className = 'pegawaiName';
-            namaEl.textContent = nama + ' (NIK: ' + nik + ')';
+            namaEl.textContent = `${nama} (NIK: ${nik})`;
             card.appendChild(namaEl);
 
-            // Buat form input cuti
-            const cuti = data.cutiTerpakai || {};
-
-            // Fungsi buat input
-            function createInputField(label, field, value) {
-              const wrapper = document.createElement('div');
-              wrapper.style.margin = '4px 0';
-
-              const lbl = document.createElement('label');
-              lbl.textContent = label + ': ';
-              wrapper.appendChild(lbl);
-
-              const input = document.createElement('input');
-              input.type = 'number';
-              input.value = value !== undefined ? value : 0;
-              input.dataset.field = field;
-              wrapper.appendChild(input);
-              return wrapper;
-            }
-
-            // Container untuk input
-            const inputContainer = document.createElement('div');
-            inputContainer.className = 'edit-section';
-
-            // Input untuk tiap jenis cuti
+            // Form input semua jenis cuti
             const fields = [
-              { label: 'Cuti Tahunan', field: 'tahunan', value: cuti.tahunan },
-              { label: 'Cuti Besar', field: 'besar', value: cuti.besar },
-              { label: 'Cuti Sakit', field: 'sakit', value: cuti.sakit },
-              { label: 'Cuti Melahirkan', field: 'melahirkan', value: cuti.melahirkan },
-              { label: 'Cuti Alasan Penting', field: 'penting', value: cuti.penting },
-              { label: 'Cuti di Luar Tanggungan', field: 'luar_negara', value: cuti.luar_negara }
+              { label: 'Cuti Tahunan', key: 'tahunan' },
+              { label: 'Cuti Besar', key: 'besar' },
+              { label: 'Cuti Sakit', key: 'sakit' },
+              { label: 'Cuti Melahirkan', key: 'melahirkan' },
+              { label: 'Cuti Karena Alasan Penting', key: 'penting' },
+              { label: 'Cuti di Luar Negara', key: 'luar_negara' }
             ];
 
             fields.forEach(f => {
-              inputContainer.appendChild(createInputField(f.label, f.field, f.value));
-            });
+              const div = document.createElement('div');
+              div.className = 'form-group';
 
-            card.appendChild(inputContainer);
+              const label = document.createElement('label');
+              label.textContent = f.label + ': ';
+              div.appendChild(label);
+
+              const input = document.createElement('input');
+              input.type = 'number';
+              input.value = cuti[f.key] !== undefined ? cuti[f.key] : 0;
+              input.dataset.nik = doc.id; // simpan id pegawai
+              input.dataset.field = f.key;
+              div.appendChild(input);
+
+              card.appendChild(div);
+            });
 
             // Tombol simpan
             if (isAdmin) {
               const btnSimpan = document.createElement('button');
+              btnSimpan.className = 'btn-simpan';
               btnSimpan.textContent = 'Simpan';
-              btnSimpan.className = 'btn-save';
               btnSimpan.onclick = () => {
                 // Ambil data dari input
-                const inputs = inputContainer.querySelectorAll('input');
+                const inputs = card.querySelectorAll('input');
                 const updateData = {};
-                inputs.forEach(input => {
-                  const field = input.dataset.field;
-                  const val = parseInt(input.value);
+                inputs.forEach(inp => {
+                  const nikPegawai = inp.dataset.nik; // id dokumen
+                  const field = inp.dataset.field;
+                  const val = parseInt(inp.value);
                   if (!isNaN(val)) {
-                    updateData['cutiTerpakai.' + field] = val;
+                    // Simpan ke object update
+                    if (!updateData['cutiTerpakai']) updateData['cutiTerpakai'] = {};
+                    updateData['cutiTerpakai'][field] = val;
                   }
                 });
                 // Update ke Firebase
-                db.collection('pegawai').doc(doc.id).update({ cutiTerpakai: updateData })
+                db.collection('pegawai').doc(nikPegawai).update(updateData)
                   .then(() => {
                     alert('Data berhasil disimpan.');
-                    fetchAndDisplayPegawai(); // refresh data
+                    loadPegawai(); // Refresh data kartu
                   })
                   .catch(e => {
                     alert('Gagal menyimpan data!');
@@ -508,34 +296,14 @@
               card.appendChild(btnSimpan);
             }
 
-            document.getElementById('listPegawai').appendChild(card);
+            container.appendChild(card);
           });
         });
     }
 
-    // ================== Filter pegawai ==================
-    function filterPegawai() {
-      const input = document.getElementById('searchInput').value.toLowerCase();
-      const cards = document.querySelectorAll('.pegawaiCard');
-
-      cards.forEach(card => {
-        const namaText = card.querySelector('.pegawaiName').textContent.toLowerCase();
-        if (namaText.includes(input)) {
-          card.style.display = '';
-        } else {
-          card.style.display = 'none';
-        }
-      });
-    }
-
-    // ================== Inisialisasi ==================
+    // ================== Inisial load ==================
     window.onload = () => {
-      loadKuota();
-      fetchCutiHariIni();
-      fetchAndDisplayPegawai();
-
-      document.getElementById('searchInput').addEventListener('input', filterPegawai);
-      document.getElementById('toggleModeBtn').textContent = `Mode: ${isAdmin ? 'Admin' : 'User'}`;
+      loadPegawai();
     };
   </script>
 </body>
