@@ -267,7 +267,8 @@
         document.getElementById('toggleModeBtn').textContent = 'Mode: Admin';
         alert('Anda masuk sebagai Admin.');
         loadKuota();
-        loadData();
+        fetchCutiHariIni();
+        tampilkanKartuPegawai();
         document.getElementById('loginAdminBtn').style.display = 'none';
       } else {
         alert('Password salah!');
@@ -283,7 +284,8 @@
       isAdmin = false;
       document.getElementById('toggleModeBtn').textContent = 'Mode: User';
       loadKuota();
-      loadData();
+      fetchCutiHariIni();
+      tampilkanKartuPegawai();
       document.getElementById('loginAdminBtn').style.display = 'inline-block';
     });
 
@@ -315,7 +317,7 @@
         { key: 'sakit', label: 'Cuti Sakit' },
         { key: 'besar', label: 'Cuti Besar' },
         { key: 'melahirkan', label: 'Cuti Melahirkan' },
-        { key: 'penting', label: 'Cuti Karena Alasan Penting' },
+        { key: 'p usingin', label: 'Cuti Karena Alasan Penting' },
         { key: 'luar_negara', label: 'Cuti di Luar Tanggungan Negara' }
       ];
       kuotaList.forEach(item => {
@@ -490,6 +492,21 @@
       });
     }
 
+    // ================== Fungsi filterPegawai ==================
+    function filterPegawai() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      const daftarCards = document.querySelectorAll('.pegawaiCard');
+
+      daftarCards.forEach(card => {
+        const namaPegawai = card.querySelector('.pegawaiName').textContent.toLowerCase();
+        if (namaPegawai.includes(input)) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
     // ================== Inisialisasi dan panggil fungsi utama ==================
     window.onload = () => {
       loadKuota();
@@ -505,9 +522,6 @@
       // Mode awal
       document.getElementById('toggleModeBtn').textContent = `Mode: ${isAdmin ? 'Admin' : 'User'}`;
     };
-
-    // Fungsi loadData() harus didefinisikan di kode Anda, agar tidak error.
   </script>
 </body>
 </html>
-
