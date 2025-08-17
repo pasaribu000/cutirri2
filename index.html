@@ -1,171 +1,508 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Catatan Firestore</title>
-    <!-- Tailwind CSS untuk styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #374151;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manajemen Cuti RRI Sibolga</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #f0f4f8;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* Container tombol aksi */
+    #action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      padding: 15px 20px;
+      background-color: #e0e0e0;
+    }
+
+    /* Tombol */
+    .btn {
+      padding: 12px 20px;
+      background-color: #007bff;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+      transform: translateY(-2px);
+    }
+
+    /* Header modern dan responsif */
+    #header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #007bff;
+      padding: 15px 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    #logo-title {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    #logo {
+      width: 60px;
+      height: 60px;
+    }
+
+    #title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Waktu dan Tanggal */
+    #waktu {
+      text-align: right;
+      margin-top: 10px;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    h2 {
+      margin: 20px 10px 10px 10px;
+      font-size: 20px;
+      color: #007bff;
+    }
+
+    #kuotaCutiContainer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    .kuotaItem {
+      background-color: #fff;
+      flex: 1 1 150px;
+      max-width: 200px;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .kuotaItem:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+    }
+
+    .kuotaItem h4 {
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #333;
+    }
+
+    #searchInput {
+      display: block;
+      width: calc(100% - 40px);
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 12px 15px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    #searchInput:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    #pegawaiContainer {
+      padding: 10px 20px;
+    }
+
+    .pegawaiCard {
+      background-color: #fff;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .pegawaiCard:hover {
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    .pegawaiHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .pegawaiName {
+      font-size: 18px;
+      font-weight: 600;
+      color: #222;
+    }
+
+    .cutiList {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .edit-btn {
+      margin-top: 8px;
+      cursor: pointer;
+      color: #007bff;
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: underline;
+    }
+
+    #cutiHarianContainer {
+      margin: 20px;
+      padding: 15px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      min-height: 50px;
+    }
+
+    /* Responsiveness */
+    @media(max-width: 600px) {
+      #header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      #waktu {
+        margin-top: 10px;
+      }
+
+      #kuotaCutiContainer {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
 </head>
-<body class="p-6 md:p-12 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-8 md:p-10 rounded-xl shadow-lg w-full max-w-2xl">
-        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Daftar Catatan</h1>
-        
-        <!-- Area Input Catatan -->
-        <div class="flex items-center space-x-4 mb-6">
-            <input type="text" id="note-input" placeholder="Tulis catatan baru..." class="flex-grow p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200">
-            <button id="add-note-btn" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-200">Tambah</button>
-        </div>
-        
-        <!-- Daftar Catatan -->
-        <div id="notes-list" class="space-y-4">
-            <!-- Catatan akan dimuat di sini oleh JavaScript -->
-        </div>
+<body>
+  <!-- Tombol aksi di atas -->
+  <div id="action-buttons">
+    <a href="https://forms.gle/ycdVVbSAdN7e6Hbz6" target="_blank" class="btn">Ajukan Cuti</a>
+    <a href="https://drive.google.com/drive/folders/1K3HrgnSCTvUbxoYY5fK4XI1cvo4WxANS?usp=drive_link" target="_blank" class="btn">Unduh Persyaratan</a>
+  </div>
 
-        <!-- ID Pengguna (Wajib ditampilkan untuk debugging) -->
-        <div class="mt-8 pt-4 border-t border-gray-200 text-sm text-gray-500 text-center">
-            ID Pengguna: <span id="user-id" class="font-mono text-gray-700 break-all">Memuat...</span>
-        </div>
-
-        <!-- Pesan status -->
-        <div id="status-message" class="mt-4 text-center text-red-500 hidden"></div>
+  <!-- Header -->
+  <div id="header">
+    <div id="logo-title">
+      <img id="logo" src="https://upload.wikimedia.org/wikipedia/commons/4/4f/Radio_icon.svg" alt="Logo Radio" />
+      <div id="title">Manajemen Cuti RRI Sibolga</div>
     </div>
+    <div id="waktu">
+      <div id="tanggal"></div>
+      <div id="jam"></div>
+    </div>
+  </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <!-- Infografis Kuota Cuti -->
+  <h2>Kuota Cuti</h2>
+  <div id="kuotaCutiContainer"></div>
 
-        // Global variables provided by the canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+  <!-- Pencarian Pegawai -->
+  <h2 style="text-align:center;">Cari Pegawai</h2>
+  <input type="text" id="searchInput" placeholder="Masukkan nama pegawai..." />
 
-        let db, auth;
-        let userId = null;
+  <!-- Container utama pegawai -->
+  <div id="pegawaiContainer"></div>
 
-        const noteInput = document.getElementById('note-input');
-        const addNoteBtn = document.getElementById('add-note-btn');
-        const notesList = document.getElementById('notes-list');
-        const userIdSpan = document.getElementById('user-id');
-        const statusMessageDiv = document.getElementById('status-message');
+  <!-- Pegawai Cuti Hari Ini -->
+  <h2 style="text-align:center;">Pegawai Cuti Hari Ini</h2>
+  <div id="cutiHarianContainer">Loading data...</div>
 
-        function showMessage(message, isError = false) {
-            statusMessageDiv.textContent = message;
-            statusMessageDiv.className = `mt-4 text-center ${isError ? 'text-red-500' : 'text-green-500'}`;
-            statusMessageDiv.style.display = 'block';
+  <script>
+    // ================== Konfigurasi Firebase ==================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBBDMhvpAboYaEUIfo0eyzjZxK6iZyQwpo",
+      authDomain: "cutirri.firebaseapp.com",
+      projectId: "cutirri",
+      storageBucket: "cutirri.firebasestorage.app",
+      messagingSenderId: "310950239670",
+      appId: "1:310950239670:web:3b58351db2c5946f8c3517",
+      measurementId: "G-BENDLYTZ2Z"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const isAdmin = true; // Sesuaikan kebutuhan
+
+    let allPegawaiData = [];
+
+    function updateTime() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('tanggal').textContent = now.toLocaleDateString('id-ID', options);
+      document.getElementById('jam').textContent = now.toLocaleTimeString('id-ID');
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // ================== Load Kuota ==================
+    const kuotaDocRef = db.collection('kuota_cuti').doc('kuota');
+
+    function loadKuota() {
+      kuotaDocRef.get().then(doc => {
+        let data = {
+          tahunan: 0,
+          sakit: 0,
+          besar: 0,
+          melahirkan: 0,
+          penting: 0,
+          luar_negara: 0
+        };
+        if (doc.exists) {
+          data = doc.data();
+        }
+        renderKuota(data);
+      });
+    }
+
+    function renderKuota(data) {
+      const container = document.getElementById('kuotaCutiContainer');
+      container.innerHTML = '';
+      const kuotaList = [
+        { key: 'tahunan', label: 'Cuti Tahunan' },
+        { key: 'sakit', label: 'Cuti Sakit' },
+        { key: 'besar', label: 'Cuti Besar' },
+        { key: 'melahirkan', label: 'Cuti Melahirkan' },
+        { key: 'penting', label: 'Cuti Karena Alasan Penting' },
+        { key: 'luar_negara', label: 'Cuti di Luar Tanggungan Negara' }
+      ];
+      kuotaList.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'kuotaItem';
+
+        const h4 = document.createElement('h4');
+        h4.textContent = item.label;
+        div.appendChild(h4);
+
+        const span = document.createElement('span');
+        span.textContent = data[item.key] !== undefined ? data[item.key] : 0;
+        span.id = `kuota_${item.key}`;
+        div.appendChild(span);
+
+        if (isAdmin) {
+          const editBtn = document.createElement('div');
+          editBtn.className = 'edit-btn';
+          editBtn.textContent = 'Edit';
+          editBtn.onclick = () => {
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.value = data[item.key];
+            input.style.width = '80px';
+            input.id = `input_${item.key}`;
+            div.replaceChild(input, span);
+            editBtn.textContent = 'Simpan';
+            editBtn.onclick = () => {
+              const newVal = parseInt(document.getElementById(`input_${item.key}`).value);
+              if (isNaN(newVal)) return;
+              const updateObj = {};
+              updateObj[`kuota_${item.key}`] = newVal;
+              kuotaDocRef.set(updateObj, { merge: true }).then(() => {
+                loadKuota();
+              });
+            };
+          };
+          div.appendChild(editBtn);
         }
 
-        async function initializeFirebase() {
-            try {
-                // Initialize Firebase App
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+        container.appendChild(div);
+      });
+    }
 
-                // Wait for the auth state to be ready
-                await new Promise((resolve) => {
-                    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-                        if (user) {
-                            userId = user.uid;
-                            userIdSpan.textContent = userId;
-                            console.log("Authenticated as:", userId);
-                            // Start listening to notes after auth is ready
-                            setupNotesListener();
-                            resolve();
-                        } else {
-                            // If no user, try to sign in
-                            try {
-                                if (initialAuthToken) {
-                                    await signInWithCustomToken(auth, initialAuthToken);
-                                } else {
-                                    await signInAnonymously(auth);
-                                }
-                            } catch (error) {
-                                showMessage(`Autentikasi gagal: ${error.message}`, true);
-                                console.error("Firebase Auth Error:", error);
-                            }
-                        }
-                        unsubscribe();
-                    });
-                });
+    // ================== Fetch Cuti Hari Ini ==================
+    const spreadsheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSzbKpHevX7OanEk05EQ51zhE7toeltg4Cu1n7OnS958vZcgop4R6j75OO9LWSPIbl210nan07F_mDh/pub?gid=443906944&single=true";
 
-            } catch (error) {
-                showMessage("Gagal menginisialisasi Firebase. Periksa konfigurasi.", true);
-                console.error("Firebase Initialization Error:", error);
+    function fetchCutiHariIni() {
+      fetch(spreadsheetUrl)
+        .then(response => response.text())
+        .then(csvText => {
+          const rows = csvText.split('\n').map(row => row.split(','));
+          const headers = rows[0];
+          const idxNama = headers.indexOf('Nama Pegawai');
+          const idxTanggalMulai = headers.indexOf('Tanggal Mulai Cuti');
+          const idxTanggalSelesai = headers.indexOf('Tanggal Selesai Cuti');
+          const todayStr = new Date().toISOString().split('T')[0];
+
+          const pegawaiCutiHariIni = [];
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.length < headers.length) continue;
+            const nama = row[idxNama];
+            const tglMulai = row[idxTanggalMulai];
+            const tglSelesai = row[idxTanggalSelesai];
+            if (tglMulai && tglSelesai && tglMulai <= todayStr && tglSelesai >= todayStr) {
+              pegawaiCutiHariIni.push(nama);
             }
-        }
+          }
 
-        function setupNotesListener() {
-            if (!db || !userId) {
-                console.error("Database atau User ID tidak tersedia.");
-                return;
-            }
-
-            // Path koleksi harus mengikuti struktur yang ditentukan untuk data privat
-            const notesCollectionPath = `artifacts/${appId}/users/${userId}/notes`;
-            const q = query(collection(db, notesCollectionPath));
-
-            // onSnapshot untuk mendengarkan perubahan secara real-time
-            onSnapshot(q, (querySnapshot) => {
-                notesList.innerHTML = '';
-                querySnapshot.forEach((doc) => {
-                    const note = doc.data();
-                    const noteItem = document.createElement('div');
-                    noteItem.className = 'bg-gray-100 p-4 rounded-lg flex items-center justify-between shadow-sm';
-                    noteItem.innerHTML = `
-                        <span class="text-gray-700">${note.text}</span>
-                    `;
-                    notesList.appendChild(noteItem);
-                });
-            }, (error) => {
-                showMessage("Gagal memuat catatan secara real-time.", true);
-                console.error("Firestore Error:", error);
+          const container = document.getElementById('cutiHarianContainer');
+          container.innerHTML = '';
+          if (pegawaiCutiHariIni.length === 0) {
+            container.textContent = 'Tidak ada pegawai cuti hari ini.';
+          } else {
+            const ul = document.createElement('ul');
+            pegawaiCutiHariIni.forEach(nama => {
+              const li = document.createElement('li');
+              li.textContent = nama;
+              ul.appendChild(li);
             });
-        }
+            container.appendChild(ul);
+          }
+        })
+        .catch(error => {
+          document.getElementById('cutiHarianContainer').textContent = 'Gagal mengambil data.';
+          console.error('Error fetching spreadsheet:', error);
+        });
+    }
 
-        // Fungsi untuk menambahkan catatan baru
-        async function addNote() {
-            const noteText = noteInput.value.trim();
-            if (noteText === "") {
-                showMessage("Catatan tidak boleh kosong.", true);
-                return;
-            }
+    // ================== Load semua data pegawai ==================
+    function loadData() {
+      const container = document.getElementById('pegawaiContainer');
+      container.innerHTML = '';
 
-            if (!db || !userId) {
-                showMessage("Firebase belum siap. Coba lagi.", true);
-                return;
-            }
+      db.collection('pegawai').get()
+        .then(snapshot => {
+          allPegawaiData = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id;
+            allPegawaiData.push({ id, data });
+          });
+          filterPegawai();
+        });
+    }
 
-            try {
-                const notesCollectionPath = `artifacts/${appId}/users/${userId}/notes`;
-                await addDoc(collection(db, notesCollectionPath), {
-                    text: noteText,
-                    createdAt: new Date()
-                });
-                noteInput.value = ''; // Kosongkan input setelah berhasil
-                showMessage("Catatan berhasil ditambahkan!", false);
-            } catch (error) {
-                showMessage(`Gagal menambahkan catatan: ${error.message}`, true);
-                console.error("Add Note Error:", error);
-            }
-        }
+    // ================== Filter pegawai ==================
+    function filterPegawai() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase();
+      const filteredPegawai = allPegawaiData.filter(p => p.id.toLowerCase().includes(keyword) || (p.data['nama'] && p.data['nama'].toLowerCase().includes(keyword)));
 
-        // Tambahkan event listener ke tombol
-        addNoteBtn.addEventListener('click', addNote);
+      const container = document.getElementById('pegawaiContainer');
+      container.innerHTML = '';
 
-        // Inisialisasi Firebase saat halaman dimuat
-        window.onload = initializeFirebase;
+      filteredPegawai.forEach(({ id, data }) => {
+        const pegawaiDiv = document.createElement('div');
+        pegawaiDiv.className = 'pegawaiCard';
 
-    </script>
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'pegawaiHeader';
+
+        const nama = document.createElement('div');
+        nama.className = 'pegawaiName';
+        nama.textContent = `ID: ${id} - ${data['nama'] || 'Tanpa Nama'}`;
+        headerDiv.appendChild(nama);
+
+        pegawaiDiv.appendChild(headerDiv);
+
+        const cutiContainer = document.createElement('div');
+
+        const cutiList = [
+          { label: 'Cuti Tahunan Terpakai', field: 'cuti_tahunan' },
+          { label: 'Cuti Sakit Terpakai', field: 'cuti_sakit' },
+          { label: 'Cuti Besar Terpakai', field: 'cuti_besar' },
+          { label: 'Cuti Melahirkan Terpakai', field: 'cuti_melahirkan' },
+          { label: 'Cuti Karena Alasan Penting', field: 'cuti_penting' },
+          { label: 'Cuti di Luar Tanggungan Negara', field: 'cuti_luar_negara' },
+        ];
+
+        cutiList.forEach(cuti => {
+          const item = createCutiItem(cuti.label, cuti.field, data[cuti.field], id);
+          cutiContainer.appendChild(item);
+        });
+
+        pegawaiDiv.appendChild(cutiContainer);
+        container.appendChild(pegawaiDiv);
+      });
+    }
+
+    function createCutiItem(label, field, value, pegawaiId) {
+      const div = document.createElement('div');
+
+      const labelEl = document.createElement('strong');
+      labelEl.textContent = label + ': ';
+      div.appendChild(labelEl);
+
+      const span = document.createElement('span');
+      span.textContent = value !== undefined ? value : 0;
+      span.id = `pegawai_${pegawaiId}_${field}`;
+      div.appendChild(span);
+
+      if (isAdmin) {
+        const editBtn = document.createElement('div');
+        editBtn.className = 'edit-btn';
+        editBtn.textContent = 'Edit';
+        editBtn.onclick = () => {
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.value = value;
+          input.style.width = '80px';
+          input.id = `input_${pegawaiId}_${field}`;
+          div.replaceChild(input, span);
+          editBtn.textContent = 'Simpan';
+          editBtn.onclick = () => {
+            const newVal = parseInt(document.getElementById(`input_${pegawaiId}_${field}`).value);
+            if (isNaN(newVal)) return;
+            // Update ke Firestore
+            const updateObj = {};
+            updateObj[`${field}`] = newVal;
+            db.collection('pegawai').doc(pegawaiId).set(updateObj, { merge: true }).then(() => {
+              loadData();
+            });
+          };
+        };
+        div.appendChild(editBtn);
+      }
+
+      return div;
+    }
+
+    // ================== Inisialisasi ==================
+    window.onload = () => {
+      loadKuota();
+      loadData();
+      fetchCutiHariIni();
+
+      // Update waktu & tanggal
+      setInterval(updateTime, 1000);
+      // Event pencarian
+      document.getElementById('searchInput').addEventListener('input', filterPegawai);
+    };
+  </script>
 </body>
 </html>
