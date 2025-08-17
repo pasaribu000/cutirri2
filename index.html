@@ -202,16 +202,16 @@
       #waktu {
         margin-top: 10px;
       }
-
-      #kuotaCutiContainer {
-        flex-direction: column;
-        align-items: center;
-      }
     }
   </style>
 </head>
 <body>
-  <!-- Tombol aksi di atas -->
+  <!-- Toggle Mode Button -->
+  <div style="text-align:center; margin:10px;">
+    <button id="toggleModeBtn" class="btn" style="background-color:#28a745;">Mode: User</button>
+  </div>
+
+  <!-- Tombol aksi -->
   <div id="action-buttons">
     <a href="https://forms.gle/ycdVVbSAdN7e6Hbz6" target="_blank" class="btn">Ajukan Cuti</a>
     <a href="https://drive.google.com/drive/folders/1K3HrgnSCTvUbxoYY5fK4XI1cvo4WxANS?usp=drive_link" target="_blank" class="btn">Unduh Persyaratan</a>
@@ -259,10 +259,18 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const isAdmin = true; // Sesuaikan kebutuhan
+    // Mode awal adalah user
+    let isAdmin = false;
 
-    let allPegawaiData = [];
+    // Update toggle button text
+    document.getElementById('toggleModeBtn').addEventListener('click', () => {
+      isAdmin = !isAdmin;
+      document.getElementById('toggleModeBtn').textContent = `Mode: ${isAdmin ? 'Admin' : 'User'}`;
+      loadKuota();
+      loadData();
+    });
 
+    // ================== Fungsi waktu dan tanggal ==================
     function updateTime() {
       const now = new Date();
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -392,6 +400,7 @@
     }
 
     // ================== Load semua data pegawai ==================
+    let allPegawaiData = [];
     function loadData() {
       const container = document.getElementById('pegawaiContainer');
       container.innerHTML = '';
@@ -437,8 +446,8 @@
           { label: 'Cuti Sakit Terpakai', field: 'cuti_sakit' },
           { label: 'Cuti Besar Terpakai', field: 'cuti_besar' },
           { label: 'Cuti Melahirkan Terpakai', field: 'cuti_melahirkan' },
-          { label: 'Cuti Karena Alasan Penting', field: 'cuti_penting' },
-          { label: 'Cuti di Luar Tanggungan Negara', field: 'cuti_luar_negara' },
+          { label: 'Cuti Karena Alasan Penting', field: 'c_penting' },
+          { label: 'Cuti di Luar Tanggungan Negara', field: 'c_luar_negara' },
         ];
 
         cutiList.forEach(cuti => {
@@ -502,6 +511,8 @@
       setInterval(updateTime, 1000);
       // Event pencarian
       document.getElementById('searchInput').addEventListener('input', filterPegawai);
+      // Set mode awal
+      document.getElementById('toggleModeBtn').textContent = `Mode: ${isAdmin ? 'Admin' : 'User'}`;
     };
   </script>
 </body>
