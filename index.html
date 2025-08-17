@@ -12,7 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <style>
-    /* ... (CSS tetap sama seperti sebelumnya) ... */
+    /* CSS lengkap sesuai sebelumnya */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -26,7 +26,7 @@
       line-height: 1.6;
     }
 
-    /* Container tombol aksi */
+    /* Tombol aksi dan header tetap sama */
     #action-buttons {
       display: flex;
       justify-content: center;
@@ -35,7 +35,6 @@
       background-color: #e0e0e0;
     }
 
-    /* Tombol */
     .btn {
       padding: 12px 20px;
       background-color: #007bff;
@@ -51,7 +50,6 @@
       transform: translateY(-2px);
     }
 
-    /* Header modern dan responsif */
     #header {
       display: flex;
       flex-wrap: wrap;
@@ -79,7 +77,6 @@
       color: #fff;
     }
 
-    /* Waktu dan Tanggal */
     #waktu {
       text-align: right;
       margin-top: 10px;
@@ -165,7 +162,7 @@
       color: #222;
     }
 
-    /* Untuk daftar pegawai */
+    /* Untuk daftar pegawai di bagian bawah */
     h2#pegawai {
       text-align: center;
       margin-top: 30px;
@@ -176,6 +173,7 @@
       flex-wrap: wrap;
       gap: 15px;
       justify-content: center;
+      margin: 20px;
     }
 
     .pegawaiCard {
@@ -189,7 +187,7 @@
   </style>
 </head>
 <body>
-  <!-- Login Admin Button & Mode Toggle -->
+  <!-- Login dan mode toggle -->
   <div style="text-align:center; margin:10px;">
     <button id="loginAdminBtn" class="btn" style="background-color:#dc3545;">Login Admin</button>
     <button id="toggleModeBtn" class="btn" style="background-color:#28a745;">Mode: User</button>
@@ -213,7 +211,7 @@
     </div>
   </div>
 
-  <!-- Info Kuota -->
+  <!-- Kuota Cuti -->
   <h2>Kuota Cuti</h2>
   <div id="kuotaCutiContainer"></div>
 
@@ -221,14 +219,14 @@
   <h2 style="text-align:center;">Cari Pegawai</h2>
   <input type="text" id="searchInput" placeholder="Masukkan nama pegawai..." />
 
-  <!-- Container pegawai berdasarkan pencarian -->
+  <!-- Container pegawai dari pencarian -->
   <div id="pegawaiContainer"></div>
 
   <!-- Daftar Pegawai sebagai kartu -->
   <h2 style="text-align:center;">Daftar Pegawai</h2>
   <div id="listPegawai"></div>
 
-  <!-- Cuti Hari Ini -->
+  <!-- Pegawai Cuti Hari Ini -->
   <h2 style="text-align:center;">Pegawai Cuti Hari Ini</h2>
   <div id="cutiHarianContainer">Loading data...</div>
 
@@ -408,7 +406,7 @@
         });
     }
 
-    // ================== Daftar Nama Pegawai ==================
+    // ================== Daftar pegawai ==================
     const daftarPegawai = [
       "Yanni Peter Latuheru, S.Sos",
       "Ichwansyah Pohan, S.E",
@@ -492,22 +490,24 @@
       });
     }
 
-    // ================== Inisialisasi ==================
+    // ================== Inisialisasi dan panggil fungsi utama ==================
     window.onload = () => {
       loadKuota();
-      loadData();
+      loadData(); // Pastikan fungsi loadData() sudah ada dan benar
       fetchCutiHariIni();
-
-      // Tampilkan daftar pegawai kartu
       tampilkanKartuPegawai();
 
-      // waktu
+      // update waktu terus-menerus
       setInterval(updateTime, 1000);
+
+      // event pencarian
       document.getElementById('searchInput').addEventListener('input', filterPegawai);
 
       // Mode awal
       document.getElementById('toggleModeBtn').textContent = `Mode: ${isAdmin ? 'Admin' : 'User'}`;
     };
+
+    // Fungsi loadData() harus didefinisikan di kode Anda, agar tidak error.
   </script>
 </body>
 </html>
