@@ -206,8 +206,9 @@
   </style>
 </head>
 <body>
-  <!-- Toggle Mode Button -->
+  <!-- Login Admin Button -->
   <div style="text-align:center; margin:10px;">
+    <button id="loginAdminBtn" class="btn" style="background-color:#dc3545;">Login Admin</button>
     <button id="toggleModeBtn" class="btn" style="background-color:#28a745;">Mode: User</button>
   </div>
 
@@ -262,13 +263,7 @@
     // Mode awal adalah user
     let isAdmin = false;
 
-    // Update toggle button text
-    document.getElementById('toggleModeBtn').addEventListener('click', () => {
-      isAdmin = !isAdmin;
-      document.getElementById('toggleModeBtn').textContent = `Mode: ${isAdmin ? 'Admin' : 'User'}`;
-      loadKuota();
-      loadData();
-    });
+    const PASSWORD_ADMIN = "rriadmin2025";
 
     // ================== Fungsi waktu dan tanggal ==================
     function updateTime() {
@@ -279,6 +274,32 @@
     }
     setInterval(updateTime, 1000);
     updateTime();
+
+    // ================== Login Admin ==================
+    document.getElementById('loginAdminBtn').addEventListener('click', () => {
+      const password = prompt('Masukkan password admin:');
+      if (password === PASSWORD_ADMIN) {
+        isAdmin = true;
+        document.getElementById('toggleModeBtn').textContent = 'Mode: Admin';
+        alert('Anda masuk sebagai Admin.');
+        loadKuota();
+        loadData();
+      } else {
+        alert('Password salah!');
+      }
+    });
+
+    // ================== Toggle Mode ==================
+    document.getElementById('toggleModeBtn').addEventListener('click', () => {
+      if (!isAdmin) {
+        alert('Silakan login sebagai admin terlebih dahulu.');
+        return;
+      }
+      isAdmin = false;
+      document.getElementById('toggleModeBtn').textContent = 'Mode: User';
+      loadKuota();
+      loadData();
+    });
 
     // ================== Load Kuota ==================
     const kuotaDocRef = db.collection('kuota_cuti').doc('kuota');
