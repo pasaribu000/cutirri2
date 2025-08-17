@@ -26,7 +26,6 @@
       line-height: 1.6;
     }
 
-    /* Tombol aksi dan header tetap sama */
     #action-buttons {
       display: flex;
       justify-content: center;
@@ -68,7 +67,6 @@
 
     #logo {
       width: 60px;
-      height: 60px;
     }
 
     #title {
@@ -162,27 +160,29 @@
       color: #222;
     }
 
-    /* Untuk daftar pegawai di bagian bawah */
-    h2#pegawai {
-      text-align: center;
-      margin-top: 30px;
+    /* Untuk form edit */
+    .edit-section {
+      margin-top: 10px;
     }
 
-    #listPegawai {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      justify-content: center;
-      margin: 20px;
+    .edit-section input {
+      width: 80px;
+      padding: 4px;
+      margin: 2px 0;
     }
 
-    .pegawaiCard {
-      background-color: #fff;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      width: 200px;
-      text-align: center;
+    .btn-save {
+      margin-top: 8px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .btn-save:hover {
+      background-color: #218838;
     }
   </style>
 </head>
@@ -268,7 +268,7 @@
         alert('Anda masuk sebagai Admin.');
         loadKuota();
         fetchCutiHariIni();
-        tampilkanKartuPegawai();
+        fetchAndDisplayPegawai(); // Panggil fungsi untuk tampilkan data pegawai dari Firebase
         document.getElementById('loginAdminBtn').style.display = 'none';
       } else {
         alert('Password salah!');
@@ -285,7 +285,7 @@
       document.getElementById('toggleModeBtn').textContent = 'Mode: User';
       loadKuota();
       fetchCutiHariIni();
-      tampilkanKartuPegawai();
+      fetchAndDisplayPegawai(); // Refresh data pegawai dari Firebase
       document.getElementById('loginAdminBtn').style.display = 'inline-block';
     });
 
@@ -317,7 +317,7 @@
         { key: 'sakit', label: 'Cuti Sakit' },
         { key: 'besar', label: 'Cuti Besar' },
         { key: 'melahirkan', label: 'Cuti Melahirkan' },
-        { key: 'p usingin', label: 'Cuti Karena Alasan Penting' },
+        { key: 'penting', label: 'Cuti Karena Alasan Penting' },
         { key: 'luar_negara', label: 'Cuti di Luar Tanggungan Negara' }
       ];
       kuotaList.forEach(item => {
@@ -345,6 +345,7 @@
             input.id = `input_${item.key}`;
             div.replaceChild(input, span);
             editBtn.textContent = 'Simpan';
+            // Simpan ke Firebase
             editBtn.onclick = () => {
               const newVal = parseInt(document.getElementById(`input_${item.key}`).value);
               if (isNaN(newVal)) return;
@@ -408,98 +409,118 @@
         });
     }
 
-    // ================== Daftar pegawai ==================
-    const daftarPegawai = [
-      "Yanni Peter Latuheru, S.Sos",
-      "Ichwansyah Pohan, S.E",
-      "Rosmawan Hutabarat, S.E",
-      "Viktor Hamonangan Hutabarat",
-      "Khairil",
-      "Vivi Tri Doharny Daulay",
-      "Diskatarisa Hutabarat",
-      "Novita Sari Putri S.E",
-      "Silverius Hamonangan P. Purba, S.Sos",
-      "Frans Martuani Sinaga, S.M",
-      "Ade Wulan Septyaningsih, S.IP",
-      "Nurhamni Ichwarti, S.Sos",
-      "Citra Priadi Pasaribu, S.IP",
-      "Azis Fahri Tanjung, S.Kom",
-      "Annisa Lestari Nasution, A.Md.Ak",
-      "Putri Andriani, A.Md.Ak",
-      "Mahani Aprilia, A.Md.Ak",
-      "Idola Pratiwi Sinaga, A.md.Pjk",
-      "Ray Wiranta, A.Md.A.B",
-      "Indah Farima Putri, A.Md",
-      "Hans Pierre Sitohang, A.Md",
-      "Sopiah Hasibuan, A.Md",
-      "Aziziah khurfatul Janah, A.Md.Ds",
-      "Astrid khairani Sinaga, A.Md",
-      "Intan Friskila hondro, A.Md",
-      "Anna Theresia Simatupang, S.Sos",
-      "Desi Suriani Pasaribu, S.E",
-      "Rindu Fatmawaty, S.H",
-      "Gerhanawati, S.E",
-      "Ismail Marzuki, S.Sos",
-      "Ronny Ferdian, S.E",
-      "Safran Nuh Nasution, S.T",
-      "M.Khalis Pasaribu, S.Ikom",
-      "Eko Putra Hutabarat, A.Md",
-      "Ahmad Ridho Siregar, A.Md.T",
-      "Ahlis Jami'ah Damanik, A.Md.Kom",
-      "Deliana Nasution",
-      "Widya Sartika Nasution",
-      "Paulus Hadi",
-      "Ahmad Ferdian",
-      "Anhar Rianto Pasaribu",
-      "Deny Siahaan",
-      "Abdul Jalil",
-      "Dedi Hariadi",
-      "Edi Suheri",
-      "Muafdan Jega",
-      "Joyful Rom Sihotang",
-      "James Fransiskus",
-      "Jonni Sihombing",
-      "Martha Monica Putri Siahaan, S.T",
-      "Erni Sasmita, S.E",
-      "Wilson Pangihutan Siregar",
-      "Welly Boy Simatupang, S.E",
-      "Eva Meylina Siahaan",
-      "Flora Susanti Lumbantobing",
-      "Ester Tampubolon",
-      "Bernard Adi Saputra Saragih",
-      "Felix Simatupang",
-      "Mukhtadinul Ikhsan",
-      "Halasson Siahaan",
-      "Mahar Yusuf Sinaga",
-      "Irfan Sihotang",
-      "Rizky Ramadhan Piliang",
-      "Andrian Mendrofa"
-    ];
+    // ================== Data pegawai (dari Firebase) ==================
+    // Sekarang kita akan menampilkan dan mengupdate data dari Firebase
+    let pegawaiData = {}; // objek untuk cache data pegawai
 
-    function tampilkanKartuPegawai() {
-      const container = document.getElementById('listPegawai');
-      container.innerHTML = '';
-      daftarPegawai.forEach(nama => {
-        const card = document.createElement('div');
-        card.className = 'pegawaiCard';
+    function fetchAndDisplayPegawai() {
+      // Ambil semua dokumen pegawai dari collection
+      db.collection('pegawai').get()
+        .then(querySnapshot => {
+          // Bersihkan container
+          document.getElementById('listPegawai').innerHTML = '';
 
-        const namaEl = document.createElement('div');
-        namaEl.className = 'pegawaiName';
-        namaEl.textContent = nama;
+          querySnapshot.forEach(doc => {
+            const data = doc.data(); // data pegawai
+            const nama = data.nama || 'Tanpa Nama';
+            const nik = data.nik || 'NIK Tidak Diketahui';
 
-        card.appendChild(namaEl);
-        container.appendChild(card);
-      });
+            // Simpan cache
+            pegawaiData[doc.id] = data;
+
+            // Buat kartu
+            const card = document.createElement('div');
+            card.className = 'pegawaiCard';
+
+            // header nama dan nik
+            const namaEl = document.createElement('div');
+            namaEl.className = 'pegawaiName';
+            namaEl.textContent = nama + ' (NIK: ' + nik + ')';
+            card.appendChild(namaEl);
+
+            // Buat form input cuti
+            const cuti = data.cutiTerpakai || {};
+
+            // Fungsi buat input
+            function createInputField(label, field, value) {
+              const wrapper = document.createElement('div');
+              wrapper.style.margin = '4px 0';
+
+              const lbl = document.createElement('label');
+              lbl.textContent = label + ': ';
+              wrapper.appendChild(lbl);
+
+              const input = document.createElement('input');
+              input.type = 'number';
+              input.value = value !== undefined ? value : 0;
+              input.dataset.field = field;
+              wrapper.appendChild(input);
+              return wrapper;
+            }
+
+            // Container untuk input
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'edit-section';
+
+            // Input untuk tiap jenis cuti
+            const fields = [
+              { label: 'Cuti Tahunan', field: 'tahunan', value: cuti.tahunan },
+              { label: 'Cuti Besar', field: 'besar', value: cuti.besar },
+              { label: 'Cuti Sakit', field: 'sakit', value: cuti.sakit },
+              { label: 'Cuti Melahirkan', field: 'melahirkan', value: cuti.melahirkan },
+              { label: 'Cuti Alasan Penting', field: 'penting', value: cuti.penting },
+              { label: 'Cuti di Luar Tanggungan', field: 'luar_negara', value: cuti.luar_negara }
+            ];
+
+            fields.forEach(f => {
+              inputContainer.appendChild(createInputField(f.label, f.field, f.value));
+            });
+
+            card.appendChild(inputContainer);
+
+            // Tombol simpan
+            if (isAdmin) {
+              const btnSimpan = document.createElement('button');
+              btnSimpan.textContent = 'Simpan';
+              btnSimpan.className = 'btn-save';
+              btnSimpan.onclick = () => {
+                // Ambil data dari input
+                const inputs = inputContainer.querySelectorAll('input');
+                const updateData = {};
+                inputs.forEach(input => {
+                  const field = input.dataset.field;
+                  const val = parseInt(input.value);
+                  if (!isNaN(val)) {
+                    updateData['cutiTerpakai.' + field] = val;
+                  }
+                });
+                // Update ke Firebase
+                db.collection('pegawai').doc(doc.id).update({ cutiTerpakai: updateData })
+                  .then(() => {
+                    alert('Data berhasil disimpan.');
+                    fetchAndDisplayPegawai(); // refresh data
+                  })
+                  .catch(e => {
+                    alert('Gagal menyimpan data!');
+                    console.error(e);
+                  });
+              };
+              card.appendChild(btnSimpan);
+            }
+
+            document.getElementById('listPegawai').appendChild(card);
+          });
+        });
     }
 
-    // ================== Fungsi filterPegawai ==================
+    // ================== Filter pegawai ==================
     function filterPegawai() {
       const input = document.getElementById('searchInput').value.toLowerCase();
-      const daftarCards = document.querySelectorAll('.pegawaiCard');
+      const cards = document.querySelectorAll('.pegawaiCard');
 
-      daftarCards.forEach(card => {
-        const namaPegawai = card.querySelector('.pegawaiName').textContent.toLowerCase();
-        if (namaPegawai.includes(input)) {
+      cards.forEach(card => {
+        const namaText = card.querySelector('.pegawaiName').textContent.toLowerCase();
+        if (namaText.includes(input)) {
           card.style.display = '';
         } else {
           card.style.display = 'none';
@@ -507,19 +528,13 @@
       });
     }
 
-    // ================== Inisialisasi dan panggil fungsi utama ==================
+    // ================== Inisialisasi ==================
     window.onload = () => {
       loadKuota();
       fetchCutiHariIni();
-      tampilkanKartuPegawai();
+      fetchAndDisplayPegawai();
 
-      // update waktu terus-menerus
-      setInterval(updateTime, 1000);
-
-      // event pencarian
       document.getElementById('searchInput').addEventListener('input', filterPegawai);
-
-      // Mode awal
       document.getElementById('toggleModeBtn').textContent = `Mode: ${isAdmin ? 'Admin' : 'User'}`;
     };
   </script>
